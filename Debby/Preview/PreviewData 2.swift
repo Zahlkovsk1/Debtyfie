@@ -28,6 +28,24 @@ enum PreviewData {
         let baga = Person(name: "Baga")
         let nilufar = Person(name: "Nilufar")
         for person in [gafur, ali, baga, nilufar] { context.insert(person) }
+        
+        gafur.phoneRegion = "RU"
+               gafur.phoneNumber = "9001234567"
+               gafur.messenger = .whatsapp
+               gafur.messengerHandle = "+7 900 123 45 67"
+
+               ali.phoneRegion = "UZ"
+               ali.phoneNumber = "901234567"
+               ali.messenger = .telegram
+               ali.messengerHandle = "ali_karimov"
+               ali.note = "Brings dollars on Fridays. Prefers to be paid back in euros."
+
+               let humo = PaymentCard(number: "9860123456789012", holderName: "ALI KARIMOV")
+               let sber = PaymentCard(number: "2202123456789012", holderName: "ALI KARIMOV", bank: .sber)
+               context.insert(humo)
+               context.insert(sber)
+               humo.person = ali
+               sber.person = ali
 
         func add(_ entry: Entry, hoursAgo: Double) {
                    let moment = Date.now.addingTimeInterval(-hoursAgo * 3600)

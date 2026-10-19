@@ -19,6 +19,15 @@ struct AddPersonView: View {
     @State private var name = ""
     @State private var photoItem: PhotosPickerItem?
     @State private var photoData: Data?
+
+    @State private var country = CallingCountry.country(region: "UZ")!
+    @State private var phoneText = ""
+    @State private var messenger: Messenger?
+    @State private var handle = ""
+    @State private var note = ""
+    @State private var cardDrafts: [CardDraft] = []
+    @State private var isAddingCard = false
+    
     @FocusState private var nameFocused: Bool
 
     private var trimmedName: String {
@@ -27,22 +36,43 @@ struct AddPersonView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: Spacing.l) {
-                PhotosPicker(selection: $photoItem, matching: .images) {
-                    avatar
+            ScrollView {
+                VStack(spacing: Spacing.l) {
+                    PhotosPicker(selection: $photoItem, matching: .images) {
+                        avatar
+                    }
+                    .buttonStyle(.plain)
+
+                    FieldGroup("Name") {
+                        TextField("Name", text: $name)
+                            .font(.appBody)
+                            .textInputAutocapitalization(.words)
+                            .focused($nameFocused)
+                            .fieldStyle()
+                    }
+
+                    FieldGroup("Phone") {
+                        PhoneField(country: $country, number: $phoneText)
+                    }
+
+                    FieldGroup("Messenger") {
+                        messengerSection
+                    }
+                    
+                    FieldGroup("Cards") {
+                        cardsSection
+                    }
+
+                    FieldGroup("Note") {
+                        TextField("Anything worth remembering", text: $note, axis: .vertical)
+                            .font(.appBody)
+                            .lineLimit(2...5)
+                            .fieldStyle()
+                    }
                 }
-                .buttonStyle(.plain)
-
-                TextField("Name", text: $name)
-                    .font(.appBody)
-                    .textInputAutocapitalization(.words)
-                    .focused($nameFocused)
-                    .padding(Spacing.m)
-                    .background(.surface, in: RoundedRectangle(cornerRadius: Radius.m))
-
-                Spacer()
+                .padding(Spacing.m)
             }
-            .padding(Spacing.m)
+            .scrollDismissesKeyboard(.interactively)
             .background(.appBackground)
             .navigationTitle("New person")
             .navigationBarTitleDisplayMode(.inline)
@@ -57,6 +87,59 @@ struct AddPersonView: View {
             }
             .task { nameFocused = true }
             .onChange(of: photoItem) { _, item in loadPhoto(item) }
+            .onChange(of: messenger) { handle = "" }
+            .sheet(isPresented: $isAddingCard) {
+                           AddCardView { cardDrafts.append($0) }
+                       }
+        }
+    }
+
+    private var messengerSection: some View {
+        VStack(spacing: Spacing.s) {
+            Picker("Messenger", selection: $messenger) {
+                Text("None").tag(Messenger?.none)
+                ForEach(Messenger.allCases, id: \.self) { messenger in
+                    Text(messenger.displayName).tag(Optional(messenger))
+                }
+            }
+            .pickerStyle(.segmented)
+
+            if let messenger {
+                TextField(
+                    messenger == .telegram ? "@username" : "+39 333 123 4567",
+                    text: $handle
+                )
+                .font(.appBody)
+                .keyboardType(messenger == .telegram ? .asciiCapable : .phonePad)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .fieldStyle()
+            }
+        }
+    }
+    
+    private var cardsSection: some View {
+        VStack(spacing: Spacing.s) {
+            ForEach(cardDrafts) { draft in
+                CardRow(number: draft.number, holderName: draft.holderName, bank: draft.bank) {
+                    cardDrafts.removeAll { $0.id == draft.id }
+                }
+            }
+
+            Button {
+                isAddingCard = true
+            } label: {
+                HStack(spacing: Spacing.m) {
+                    Image(systemName: "creditcard")
+                    Text("Add card")
+                    Spacer()
+                    Image(systemName: "plus")
+                }
+                .font(.appBody)
+                .foregroundStyle(.textPrimary)
+                .fieldStyle()
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -79,7 +162,27 @@ struct AddPersonView: View {
 
     private func save() {
         let person = Person(name: trimmedName, photoData: photoData)
+
+        let digits = PhoneNumber(country: country, typed: phoneText).national
+        if !digits.isEmpty {
+            person.phoneRegion = country.region
+            person.phoneNumber = digits
+        }
+
+        let trimmedHandle = handle.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let messenger, !trimmedHandle.isEmpty {
+            person.messenger = messenger
+            person.messengerHandle = trimmedHandle
+        }
+
+        person.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
+
         context.insert(person)
+        for draft in cardDrafts {
+                   let card = PaymentCard(number: draft.number, holderName: draft.holderName, bank: draft.bank)
+                   context.insert(card)
+                   card.person = person
+               }
         onSave(person)
         dismiss()
     }

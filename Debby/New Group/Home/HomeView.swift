@@ -56,6 +56,7 @@ struct HomeView: View {
             }
             .background(.appBackground)
             .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: Person.self) { PersonDetailView(person: $0) }
             .overlay(alignment: .bottomTrailing) { addButton }
             .sheet(isPresented: $isAddingEntry) { AddEntryView() }
         }
@@ -69,7 +70,10 @@ struct HomeView: View {
 
             LazyVStack(spacing: 0) {
                 ForEach(sortedPeople) { person in
-                    PersonRow(person: person, currency: selectedCurrency)
+                    NavigationLink(value: person) {
+                                          PersonRow(person: person, currency: selectedCurrency)
+                                      }
+                                      .buttonStyle(.plain)
                     divider
                 }
             }

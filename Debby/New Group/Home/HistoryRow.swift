@@ -10,6 +10,7 @@ import SwiftData
 
 struct HistoryRow: View {
     let entry: Entry
+    var showsPerson = true
 
     var body: some View {
         HStack(spacing: Spacing.m) {
@@ -20,7 +21,7 @@ struct HistoryRow: View {
                 .background(.surface, in: Circle())
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(entry.person?.name ?? "–")
+                Text(showsPerson ? (entry.person?.name ?? "–") : directionText)
                     .font(.appHeadline)
                     .foregroundStyle(.textPrimary)
                 Text(subtitle)
@@ -50,10 +51,16 @@ struct HistoryRow: View {
         .padding(.vertical, Spacing.s)
     }
 
+    private var directionText: String {
+        entry.direction == .gave ? String(localized: "You gave") : String(localized: "You received")
+    }
+
+    private var dateText: String {
+        entry.date.formatted(.dateTime.day().month(.abbreviated).hour().minute())
+    }
+
     private var subtitle: String {
-        let who = entry.direction == .gave ? String(localized: "You gave") : String(localized: "You received")
-        let when = entry.date.formatted(.dateTime.day().month(.abbreviated).hour().minute())
-        return "\(who) · \(when)"
+        showsPerson ? "\(directionText) · \(dateText)" : dateText
     }
 }
 
