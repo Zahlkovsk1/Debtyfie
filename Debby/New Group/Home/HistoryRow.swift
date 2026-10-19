@@ -49,6 +49,7 @@ struct HistoryRow: View {
             }
         }
         .padding(.vertical, Spacing.s)
+        .contentShape(Rectangle())
     }
 
     private var directionText: String {

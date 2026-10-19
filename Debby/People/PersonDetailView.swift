@@ -14,6 +14,7 @@ struct PersonDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @State private var isConfirmingDelete = false
+    @State private var editingEntry: Entry?
 
     private var currency: Currency { Currency(code: currencyCode) }
 
@@ -131,13 +132,19 @@ struct PersonDetailView: View {
 
             LazyVStack(spacing: 0) {
                 ForEach(sortedEntries) { entry in
-                    HistoryRow(entry: entry, showsPerson: false)
+                    Button {
+                        editingEntry = entry
+                    } label: {
+                        HistoryRow(entry: entry, showsPerson: false)
+                    }
+                    .buttonStyle(.plain)
                     Rectangle()
                         .fill(.divider)
                         .frame(height: 1)
                 }
             }
         }
+        .sheet(item: $editingEntry) { AddEntryView(entry: $0) }
     }
     
     private func deletePerson() {

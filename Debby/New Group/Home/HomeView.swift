@@ -13,6 +13,7 @@ struct HomeView: View {
     @Query(sort: \Entry.date, order: .reverse) private var entries: [Entry]
     @AppStorage("homeCurrencyCode") private var currencyCode = "EUR"
     @State private var isAddingEntry = false
+    @State private var editingEntry: Entry?
 
     private var selectedCurrency: Currency { Currency(code: currencyCode) }
 
@@ -88,11 +89,17 @@ struct HomeView: View {
 
             LazyVStack(spacing: 0) {
                 ForEach(entries) { entry in
-                    HistoryRow(entry: entry)
+                    Button {
+                        editingEntry = entry
+                    } label: {
+                        HistoryRow(entry: entry)
+                    }
+                    .buttonStyle(.plain)
                     divider
                 }
             }
         }
+        .sheet(item: $editingEntry) { AddEntryView(entry: $0) }
     }
 
     private var divider: some View {
