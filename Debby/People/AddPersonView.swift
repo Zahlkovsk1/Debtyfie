@@ -13,25 +13,57 @@ struct AddPersonView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
 
-    /// Called with the new person right after saving.
-    var onSave: (Person) -> Void = { _ in }
+    /// The person being edited, or nil when creating a new one.
+    private let editing: Person?
 
-    @State private var name = ""
+    /// Called with the person right after saving.
+    private let onSave: (Person) -> Void
+
+    @State private var name: String
     @State private var photoItem: PhotosPickerItem?
     @State private var photoData: Data?
 
-    @State private var country = CallingCountry.country(region: "UZ")!
-    @State private var phoneText = ""
+    @State private var country: CallingCountry
+    @State private var phoneText: String
     @State private var messenger: Messenger?
-    @State private var handle = ""
-    @State private var note = ""
+    @State private var handle: String
+    @State private var note: String
+
+    /// Cards typed in this session, not saved yet.
     @State private var cardDrafts: [CardDraft] = []
+    /// Saved cards the user removed. They are only deleted when Save is tapped.
+    @State private var removedCardIDs: Set<PersistentIdentifier> = []
     @State private var isAddingCard = false
-    
+
     @FocusState private var nameFocused: Bool
+
+    init(person: Person? = nil, onSave: @escaping (Person) -> Void = { _ in }) {
+        editing = person
+        self.onSave = onSave
+
+        let uzbekistan = CallingCountry.country(region: "UZ")!
+        _name = State(initialValue: person?.name ?? "")
+        _photoData = State(initialValue: person?.photoData)
+        _country = State(initialValue: person?.phoneRegion.flatMap { CallingCountry.country(region: $0) } ?? uzbekistan)
+        _phoneText = State(initialValue: person?.phoneNumber ?? "")
+        _messenger = State(initialValue: person?.messenger)
+        _handle = State(initialValue: person?.messengerHandle ?? "")
+        _note = State(initialValue: person?.note ?? "")
+    }
+
+    private var title: LocalizedStringKey {
+        editing == nil ? "New person" : "Edit person"
+    }
 
     private var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Cards already in the database that the user has not removed.
+    private var savedCards: [PaymentCard] {
+        (editing?.cards ?? [])
+            .filter { !removedCardIDs.contains($0.persistentModelID) }
+            .sorted { $0.createdAt < $1.createdAt }
     }
 
     var body: some View {
@@ -58,7 +90,7 @@ struct AddPersonView: View {
                     FieldGroup("Messenger") {
                         messengerSection
                     }
-                    
+
                     FieldGroup("Cards") {
                         cardsSection
                     }
@@ -74,7 +106,7 @@ struct AddPersonView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .background(.appBackground)
-            .navigationTitle("New person")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -85,12 +117,12 @@ struct AddPersonView: View {
                         .disabled(trimmedName.isEmpty)
                 }
             }
-            .task { nameFocused = true }
+            .task { if editing == nil { nameFocused = true } }
             .onChange(of: photoItem) { _, item in loadPhoto(item) }
             .onChange(of: messenger) { handle = "" }
             .sheet(isPresented: $isAddingCard) {
-                           AddCardView { cardDrafts.append($0) }
-                       }
+                AddCardView { cardDrafts.append($0) }
+            }
         }
     }
 
@@ -117,9 +149,15 @@ struct AddPersonView: View {
             }
         }
     }
-    
+
     private var cardsSection: some View {
         VStack(spacing: Spacing.s) {
+            ForEach(savedCards) { card in
+                CardRow(number: card.number, holderName: card.holderName, bank: card.bank) {
+                    removedCardIDs.insert(card.persistentModelID)
+                }
+            }
+
             ForEach(cardDrafts) { draft in
                 CardRow(number: draft.number, holderName: draft.holderName, bank: draft.bank) {
                     cardDrafts.removeAll { $0.id == draft.id }
@@ -161,10 +199,17 @@ struct AddPersonView: View {
     }
 
     private func save() {
-        let person = Person(name: trimmedName, photoData: photoData)
+        let person = editing ?? Person(name: trimmedName, photoData: photoData)
+        if editing == nil { context.insert(person) }
+
+        person.name = trimmedName
+        person.photoData = photoData
 
         let digits = PhoneNumber(country: country, typed: phoneText).national
-        if !digits.isEmpty {
+        if digits.isEmpty {
+            person.phoneRegion = nil
+            person.phoneNumber = nil
+        } else {
             person.phoneRegion = country.region
             person.phoneNumber = digits
         }
@@ -173,16 +218,24 @@ struct AddPersonView: View {
         if let messenger, !trimmedHandle.isEmpty {
             person.messenger = messenger
             person.messengerHandle = trimmedHandle
+        } else {
+            person.messenger = nil
+            person.messengerHandle = nil
         }
 
         person.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        context.insert(person)
+        // Cards removed in this session disappear for real only now.
+        for card in person.cards where removedCardIDs.contains(card.persistentModelID) {
+            context.delete(card)
+        }
+
         for draft in cardDrafts {
-                   let card = PaymentCard(number: draft.number, holderName: draft.holderName, bank: draft.bank)
-                   context.insert(card)
-                   card.person = person
-               }
+            let card = PaymentCard(number: draft.number, holderName: draft.holderName, bank: draft.bank)
+            context.insert(card)
+            card.person = person
+        }
+
         onSave(person)
         dismiss()
     }
@@ -208,7 +261,12 @@ struct AddPersonView: View {
     }
 }
 
-#Preview {
+#Preview("New") {
     AddPersonView()
+        .modelContainer(PreviewData.container)
+}
+
+#Preview("Edit") {
+    AddPersonView(person: PreviewData.people[1])
         .modelContainer(PreviewData.container)
 }

@@ -15,6 +15,7 @@ struct PersonDetailView: View {
     @Environment(\.modelContext) private var context
     @State private var isConfirmingDelete = false
     @State private var editingEntry: Entry?
+    @State private var isEditing = false
 
     private var currency: Currency { Currency(code: currencyCode) }
 
@@ -58,6 +59,12 @@ struct PersonDetailView: View {
         .toolbar {
                    ToolbarItem(placement: .primaryAction) {
                        Menu {
+                           Button {
+                                              isEditing = true
+                                          } label: {
+                                              Label("Edit", systemImage: "pencil")
+                                          }
+                           
                            Button("Delete person", systemImage: "trash", role: .destructive) {
                                isConfirmingDelete = true
                            }
@@ -74,6 +81,9 @@ struct PersonDetailView: View {
                    Button("Delete", role: .destructive, action: deletePerson)
                } message: {
                    Text("This also deletes all their entries (\(person.entries.count)) and cards (\(person.cards.count)). This can't be undone.")
+               }
+               .sheet(isPresented: $isEditing) {
+                   AddPersonView(person: person)
                }
     }
 

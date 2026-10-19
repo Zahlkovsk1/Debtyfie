@@ -12,12 +12,37 @@ struct PersonPicker: View {
     @Query private var people: [Person]
     @Environment(\.dismiss) private var dismiss
 
+    @State private var isAddingPerson = false
+    /// Set when a person was created in the sheet, so this screen can close too.
+    @State private var addedPerson = false
+
     private var sortedPeople: [Person] {
         people.sorted { $0.lastActivity > $1.lastActivity }
     }
 
     var body: some View {
         List {
+            Button {
+                isAddingPerson = true
+            } label: {
+                HStack(spacing: Spacing.m) {
+                    ZStack {
+                        Circle().fill(.surface)
+                        Image(systemName: "plus")
+                            .font(.headline)
+                            .foregroundStyle(.textPrimary)
+                    }
+                    .frame(width: 40, height: 40)
+
+                    Text("New person")
+                        .font(.appBody)
+                        .foregroundStyle(.textPrimary)
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
             ForEach(sortedPeople) { person in
                 Button {
                     selection = person
@@ -40,17 +65,16 @@ struct PersonPicker: View {
             }
         }
         .listStyle(.plain)
-        .overlay {
-            if people.isEmpty {
-                ContentUnavailableView(
-                    "No people yet",
-                    systemImage: "person.2",
-                    description: Text("Add a person first.")
-                )
-            }
-        }
         .navigationTitle("Select person")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $isAddingPerson, onDismiss: {
+            if addedPerson { dismiss() }
+        }) {
+            AddPersonView { person in
+                selection = person
+                addedPerson = true
+            }
+        }
     }
 }
 
