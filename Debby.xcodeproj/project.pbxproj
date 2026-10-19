@@ -29,6 +29,25 @@
 		6C16E8AB308497380087982F /* DebbyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DebbyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		6C16E8EF308615ED0087982F /* Exceptions for "DebbyTests" folder in "DebbyTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				DebbyUITests/DebbyUITests.swift,
+				DebbyUITests/DebbyUITestsLaunchTests.swift,
+			);
+			target = 6C16E8A0308497380087982F /* DebbyTests */;
+		};
+		6C16E8F0308615ED0087982F /* Exceptions for "DebbyTests" folder in "DebbyUITests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				DebbyUITests/DebbyUITests.swift,
+				DebbyUITests/DebbyUITestsLaunchTests.swift,
+			);
+			target = 6C16E8AA308497380087982F /* DebbyUITests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		6C16E894308497370087982F /* Debby */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -37,12 +56,11 @@
 		};
 		6C16E8A4308497380087982F /* DebbyTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				6C16E8EF308615ED0087982F /* Exceptions for "DebbyTests" folder in "DebbyTests" target */,
+				6C16E8F0308615ED0087982F /* Exceptions for "DebbyTests" folder in "DebbyUITests" target */,
+			);
 			path = DebbyTests;
-			sourceTree = "<group>";
-		};
-		6C16E8AE308497380087982F /* DebbyUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DebbyUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -77,7 +95,6 @@
 			children = (
 				6C16E894308497370087982F /* Debby */,
 				6C16E8A4308497380087982F /* DebbyTests */,
-				6C16E8AE308497380087982F /* DebbyUITests */,
 				6C16E893308497370087982F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -152,9 +169,6 @@
 			);
 			dependencies = (
 				6C16E8AD308497380087982F /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				6C16E8AE308497380087982F /* DebbyUITests */,
 			);
 			name = DebbyUITests;
 			packageProductDependencies = (
