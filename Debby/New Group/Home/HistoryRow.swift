@@ -21,9 +21,7 @@ struct HistoryRow: View {
                 .background(.surface, in: Circle())
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(showsPerson ? (entry.person?.name ?? "–") : directionText)
-                    .font(.appHeadline)
-                    .foregroundStyle(.textPrimary)
+                title
                 Text(subtitle)
                     .font(.appCaption)
                     .foregroundStyle(.textSecondary)
@@ -50,6 +48,26 @@ struct HistoryRow: View {
         }
         .padding(.vertical, Spacing.s)
         .contentShape(Rectangle())
+    }
+
+    /// With the person's avatar and name on the home screen, or just the
+    /// direction on the person's own screen, where the face would repeat.
+    @ViewBuilder
+    private var title: some View {
+        if showsPerson {
+            HStack(spacing: Spacing.s) {
+                if let person = entry.person {
+                    PersonAvatar(person: person, size: 28)
+                }
+                Text(entry.person?.name ?? "–")
+                    .font(.appHeadline)
+                    .foregroundStyle(.textPrimary)
+            }
+        } else {
+            Text(directionText)
+                .font(.appHeadline)
+                .foregroundStyle(.textPrimary)
+        }
     }
 
     private var directionText: String {

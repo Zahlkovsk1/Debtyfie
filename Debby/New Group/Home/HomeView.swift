@@ -13,6 +13,7 @@ struct HomeView: View {
     @Query(sort: \Entry.date, order: .reverse) private var entries: [Entry]
     @AppStorage("homeCurrencyCode") private var currencyCode = "EUR"
     @State private var isAddingEntry = false
+    @State private var isAddingPerson = false
     @State private var editingEntry: Entry?
 
     private var selectedCurrency: Currency { Currency(code: currencyCode) }
@@ -39,12 +40,9 @@ struct HomeView: View {
                     BalanceHeader(minorUnits: total, currency: currencyBinding)
 
                     if people.isEmpty {
-                        ContentUnavailableView(
-                            "No people yet",
-                            systemImage: "person.2",
-                            description: Text("Add your first person to get started.")
-                        )
+                        emptyState
                     } else {
+                        allPeopleChip
                         peopleList
                         if !entries.isEmpty {
                             history
@@ -60,7 +58,37 @@ struct HomeView: View {
             .navigationDestination(for: Person.self) { PersonDetailView(person: $0) }
             .overlay(alignment: .bottomTrailing) { addButton }
             .sheet(isPresented: $isAddingEntry) { AddEntryView() }
+            .sheet(isPresented: $isAddingPerson) { AddPersonView() }
         }
+    }
+
+    private var emptyState: some View {
+        ContentUnavailableView {
+            Label("No people yet", systemImage: "person.2")
+        } description: {
+            Text("Add your first person to get started.")
+        } actions: {
+            Button("Add person") { isAddingPerson = true }
+                .buttonStyle(.borderedProminent)
+                .tint(.textPrimary)
+        }
+    }
+
+    private var allPeopleChip: some View {
+        NavigationLink {
+            AllPeopleView()
+        } label: {
+            HStack(spacing: Spacing.s) {
+                Image(systemName: "list.bullet")
+                Text("All people")
+            }
+            .font(.appBody)
+            .foregroundStyle(.textPrimary)
+            .padding(.horizontal, Spacing.m)
+            .padding(.vertical, Spacing.s)
+            .background(.surface, in: Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     private var peopleList: some View {
@@ -72,9 +100,9 @@ struct HomeView: View {
             LazyVStack(spacing: 0) {
                 ForEach(sortedPeople) { person in
                     NavigationLink(value: person) {
-                                          PersonRow(person: person, currency: selectedCurrency)
-                                      }
-                                      .buttonStyle(.plain)
+                        PersonRow(person: person, currency: selectedCurrency)
+                    }
+                    .buttonStyle(.plain)
                     divider
                 }
             }
@@ -107,7 +135,7 @@ struct HomeView: View {
             .fill(.divider)
             .frame(height: 1)
     }
-    
+
     private var addButton: some View {
         Button {
             isAddingEntry = true
@@ -130,6 +158,6 @@ struct HomeView: View {
 
 #Preview("Empty") {
     HomeView()
-        .modelContainer(for: [Person.self, Entry.self], inMemory: true)
+        .modelContainer(for: [Person.self, Entry.self, PaymentCard.self], inMemory: true)
 }
 
