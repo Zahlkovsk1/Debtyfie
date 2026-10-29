@@ -37,12 +37,14 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
-                    BalanceHeader(minorUnits: total, currency: currencyBinding)
+                    VStack(alignment: .leading, spacing: Spacing.m) {
+                        BalanceHeader(minorUnits: total, currency: selectedCurrency)
+                        chips
+                    }
 
                     if people.isEmpty {
                         emptyState
                     } else {
-                        allPeopleChip
                         peopleList
                         if !entries.isEmpty {
                             history
@@ -62,6 +64,44 @@ struct HomeView: View {
         }
     }
 
+    private var chips: some View {
+        HStack(spacing: Spacing.s) {
+            CurrencyChip(currency: currencyBinding, isProminent: true)
+            if !people.isEmpty {
+                allPeopleChip
+                owedChip
+            }
+        }
+    }
+
+    private var owedChip: some View {
+        NavigationLink {
+            OwedView()
+        } label: {
+            HStack(spacing: Spacing.s) {
+                Image(systemName: "scalemass")
+                Text("Owed")
+                    .font(.appHeadline)
+            }
+            .filledChip()
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var allPeopleChip: some View {
+        NavigationLink {
+            AllPeopleView()
+        } label: {
+            HStack(spacing: Spacing.s) {
+                Image(systemName: "list.bullet")
+                Text("All people")
+                    .font(.appHeadline)
+            }
+            .filledChip()
+        }
+        .buttonStyle(.plain)
+    }
+
     private var emptyState: some View {
         ContentUnavailableView {
             Label("No people yet", systemImage: "person.2")
@@ -74,56 +114,65 @@ struct HomeView: View {
         }
     }
 
-    private var allPeopleChip: some View {
-        NavigationLink {
-            AllPeopleView()
-        } label: {
-            HStack(spacing: Spacing.s) {
-                Image(systemName: "list.bullet")
-                Text("All people")
-            }
-            .font(.appBody)
-            .foregroundStyle(.textPrimary)
-            .padding(.horizontal, Spacing.m)
-            .padding(.vertical, Spacing.s)
-            .background(.surface, in: Capsule())
-        }
-        .buttonStyle(.plain)
-    }
+    private let columns = [
+        GridItem(.flexible(), spacing: Spacing.m),
+        GridItem(.flexible(), spacing: Spacing.m)
+    ]
+
+    /// How many people the home grid shows before "See all".
+    private let gridLimit = 6
 
     private var peopleList: some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
-            Text("People")
-                .font(.appTitle)
-                .foregroundStyle(.textPrimary)
-
-            LazyVStack(spacing: 0) {
-                ForEach(sortedPeople) { person in
-                    NavigationLink(value: person) {
-                        PersonRow(person: person, currency: selectedCurrency)
+        VStack(alignment: .leading, spacing: Spacing.m) {
+            HStack {
+                Text("People")
+                    .font(.appTitle)
+                    .foregroundStyle(.textPrimary)
+                Spacer()
+                if people.count > gridLimit {
+                    NavigationLink {
+                        AllPeopleView()
+                    } label: {
+                        HStack(spacing: Spacing.xs) {
+                            Text("See all")
+                            Image(systemName: "chevron.right")
+                        }
+                        .font(.appBody)
+                        .foregroundStyle(.textSecondary)
                     }
                     .buttonStyle(.plain)
-                    divider
+                }
+            }
+
+            LazyVGrid(columns: columns, spacing: Spacing.m) {
+                ForEach(sortedPeople.prefix(gridLimit)) { person in
+                    NavigationLink(value: person) {
+                        PersonCard(person: person, currency: selectedCurrency)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
     }
-
+    
     private var history: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             Text("History")
                 .font(.appTitle)
                 .foregroundStyle(.textPrimary)
 
-            LazyVStack(spacing: 0) {
-                ForEach(entries) { entry in
-                    Button {
-                        editingEntry = entry
-                    } label: {
-                        HistoryRow(entry: entry)
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(entries.groupedByDay()) { group in
+                    DayHeader(title: group.title())
+                    ForEach(group.entries) { entry in
+                        Button {
+                            editingEntry = entry
+                        } label: {
+                            HistoryRow(entry: entry)
+                        }
+                        .buttonStyle(.plain)
+                        divider
                     }
-                    .buttonStyle(.plain)
-                    divider
                 }
             }
         }
@@ -137,18 +186,8 @@ struct HomeView: View {
     }
 
     private var addButton: some View {
-        Button {
-            isAddingEntry = true
-        } label: {
-            Image(systemName: "plus")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(.appBackground)
-                .frame(width: 60, height: 60)
-                .background(.textPrimary, in: Circle())
-        }
-        .accessibilityLabel("Add entry")
-        .padding(Spacing.m)
-    }
+          FloatingAddButton(label: "Add entry") { isAddingEntry = true }
+      }
 }
 
 #Preview {

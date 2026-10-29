@@ -13,7 +13,7 @@ struct DebbyApp: App {
 
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            RootView()
         }
         .modelContainer(for: [Person.self, Entry.self, PaymentCard.self])
     }

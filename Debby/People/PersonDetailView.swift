@@ -16,7 +16,8 @@ struct PersonDetailView: View {
     @State private var isConfirmingDelete = false
     @State private var editingEntry: Entry?
     @State private var isEditing = false
-
+    @State private var isAddingEntry = false
+    
     private var currency: Currency { Currency(code: currencyCode) }
 
     private var currencyBinding: Binding<Currency> {
@@ -43,8 +44,11 @@ struct PersonDetailView: View {
             VStack(alignment: .leading, spacing: Spacing.l) {
                 header
 
-                BalanceHeader(minorUnits: person.balances[currency] ?? 0, currency: currencyBinding)
-
+                VStack(alignment: .leading, spacing: Spacing.m) {
+                    BalanceHeader(minorUnits: person.balances[currency] ?? 0, currency: currency)
+                    CurrencyChip(currency: currencyBinding, isProminent: true)
+                }
+                if !sortedEntries.isEmpty { timelineLink }
                 if hasContact { contact }
                 if !sortedCards.isEmpty { cards }
                 if !person.note.isEmpty { note }
@@ -52,9 +56,15 @@ struct PersonDetailView: View {
             }
             .padding(.horizontal, Spacing.m)
             .padding(.top, Spacing.m)
-            .padding(.bottom, Spacing.xl)
+            .padding(.bottom, 96)
         }
         .background(.appBackground)
+        .overlay(alignment: .bottomTrailing) {
+            FloatingAddButton(label: "Add entry") { isAddingEntry = true }
+        }
+        .sheet(isPresented: $isAddingEntry) {
+            AddEntryView(person: person)
+        }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
                    ToolbarItem(placement: .primaryAction) {
@@ -95,6 +105,33 @@ struct PersonDetailView: View {
                 .foregroundStyle(.textPrimary)
         }
     }
+    
+    private var timelineLink: some View {
+        NavigationLink {
+            TimelineView(person: person)
+        } label: {
+            HStack(spacing: Spacing.m) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.title3)
+                    .foregroundStyle(.textPrimary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Timeline")
+                        .font(.appHeadline)
+                        .foregroundStyle(.textPrimary)
+                    Text("Phases and repayments")
+                        .font(.appCaption)
+                        .foregroundStyle(.textSecondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.appCaption)
+                    .foregroundStyle(.textSecondary)
+            }
+            .fieldStyle()
+        }
+        .buttonStyle(.plain)
+    }
+    
 
     private var contact: some View {
         FieldGroup("Contact") {
@@ -140,17 +177,20 @@ struct PersonDetailView: View {
                 .font(.appTitle)
                 .foregroundStyle(.textPrimary)
 
-            LazyVStack(spacing: 0) {
-                ForEach(sortedEntries) { entry in
-                    Button {
-                        editingEntry = entry
-                    } label: {
-                        HistoryRow(entry: entry, showsPerson: false)
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(sortedEntries.groupedByDay()) { group in
+                    DayHeader(title: group.title())
+                    ForEach(group.entries) { entry in
+                        Button {
+                            editingEntry = entry
+                        } label: {
+                            HistoryRow(entry: entry, showsPerson: false)
+                        }
+                        .buttonStyle(.plain)
+                        Rectangle()
+                            .fill(.divider)
+                            .frame(height: 1)
                     }
-                    .buttonStyle(.plain)
-                    Rectangle()
-                        .fill(.divider)
-                        .frame(height: 1)
                 }
             }
         }

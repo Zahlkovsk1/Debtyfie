@@ -74,12 +74,12 @@ struct HistoryRow: View {
         entry.direction == .gave ? String(localized: "You gave") : String(localized: "You received")
     }
 
-    private var dateText: String {
-        entry.date.formatted(.dateTime.day().month(.abbreviated).hour().minute())
-    }
+    private var timeText: String {
+          entry.date.formatted(date: .omitted, time: .shortened)
+      }
 
     private var subtitle: String {
-        showsPerson ? "\(directionText) · \(dateText)" : dateText
+        showsPerson ? "\(directionText) · \(timeText)" : timeText
     }
 }
 

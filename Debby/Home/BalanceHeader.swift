@@ -10,7 +10,7 @@ import SwiftUI
 struct BalanceHeader: View {
     /// Net balance in minor units of `currency`. Positive: they owe you.
     let minorUnits: Int
-    @Binding var currency: Currency
+    let currency: Currency
 
     private var caption: LocalizedStringKey {
         switch minorUnits {
@@ -39,22 +39,16 @@ struct BalanceHeader: View {
                 .foregroundStyle(amountColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-
-            CurrencyChip(currency: $currency)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
 #Preview {
-    @Previewable @State var eur = Currency.eur
-    @Previewable @State var usd = Currency.usd
-    @Previewable @State var rub = Currency.rub
-
     VStack(spacing: Spacing.xl) {
-        BalanceHeader(minorUnits: 140_000, currency: $eur)
-        BalanceHeader(minorUnits: -920_000, currency: $usd)
-        BalanceHeader(minorUnits: 0, currency: $rub)
+        BalanceHeader(minorUnits: 140_000, currency: .eur)
+        BalanceHeader(minorUnits: -920_000, currency: .usd)
+        BalanceHeader(minorUnits: 0, currency: .rub)
     }
     .padding(Spacing.m)
 }
