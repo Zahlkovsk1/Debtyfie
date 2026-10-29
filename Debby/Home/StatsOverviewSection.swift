@@ -19,7 +19,7 @@ struct StatsOverviewSection: View {
                 .font(.appCaption)
                 .foregroundStyle(.textSecondary)
 
-            bigAmount
+            BigAmount(text: signedText, currency: currency, color: netColor)
 
             subtitle
                 .font(.appBody)
@@ -43,21 +43,7 @@ struct StatsOverviewSection: View {
 
     // MARK: Pieces
 
-    /// "−67.500" big, ",00 ₽" small.
-    private var bigAmount: some View {
-        let parts = AmountParts(signedText, fractionDigits: currency.fractionDigits)
-        return HStack(alignment: .lastTextBaseline, spacing: 2) {
-            Text(parts.head)
-                .font(.appBalance)
-                .foregroundStyle(netColor)
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-            Text(parts.fraction + parts.tail)
-                .font(.appTitle)
-                .foregroundStyle(.textSecondary)
-                .lineLimit(1)
-        }
-    }
+ 
 
     @ViewBuilder
     private var subtitle: some View {
