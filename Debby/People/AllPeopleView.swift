@@ -66,8 +66,6 @@ struct AllPeopleView: View {
         }
         .background(.appBackground)
         .overlay { emptyState }
-        .onAppear { print("➡️ AllPeople appeared") }
-               .onDisappear { print("⬅️ AllPeople disappeared") }
         .navigationTitle("All people (\(people.count))")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, prompt: "Search by name")

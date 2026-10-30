@@ -14,15 +14,17 @@ struct RootView: View {
             Tab("Main", systemImage: "house") {
                 HomeView()
             }
-            Tab("Statistics", systemImage: "chart.bar") {
-                StatsView()
-            }
             
             Tab("Owed", systemImage: "scalemass") {
                        NavigationStack {
                            OwedView()
                        }
                    }
+            
+            Tab("Statistics", systemImage: "chart.bar") {
+                StatsView()
+            }
+            
         }
         .tint(.textPrimary)
     }

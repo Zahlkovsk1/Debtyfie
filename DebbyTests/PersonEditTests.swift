@@ -39,8 +39,8 @@ struct PersonEditTests {
         context.insert(ali)
         context.insert(Entry(person: ali, direction: .gave, amount: 100, currency: .eur))
 
-        let humo = PaymentCard(number: "9860123412341234", holderName: "ALI", bank: nil)
-        let mir = PaymentCard(number: "2200123412341234", holderName: "ALI", bank: .sber)
+        let humo = PaymentCard(number: "9860123412341234", holderName: "ALI")
+        let mir = PaymentCard(number: "2200123412341234", holderName: "ALI")
         context.insert(humo)
         context.insert(mir)
         humo.person = ali

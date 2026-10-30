@@ -158,7 +158,7 @@ struct PersonDetailView: View {
         FieldGroup("Cards") {
             VStack(spacing: Spacing.s) {
                 ForEach(sortedCards) { card in
-                    CardRow(number: card.number, holderName: card.holderName, bank: card.bank)
+                    CardRow(number: card.number, holderName: card.holderName, bankName: card.bankName)
                 }
             }
         }

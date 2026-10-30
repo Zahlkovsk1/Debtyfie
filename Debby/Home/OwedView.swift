@@ -3,8 +3,6 @@
 //  Debby
 //
 //  Created by Shox on 21/10/26.
-//
-
 import SwiftUI
 import SwiftData
 
@@ -24,35 +22,22 @@ struct OwedView: View {
     }
 
     @Query private var people: [Person]
-    @AppStorage("homeCurrencyCode") private var currencyCode = "EUR"
+    /// Only used to decide which chip comes first. Tapping a chip here never changes it.
+    @AppStorage("homeCurrencyCode") private var homeCurrencyCode = "EUR"
 
     @State private var side = OwedSide.owedToYou
     @State private var sort = Sort.largest
+    /// The chip the user tapped last. nil until they tap one.
+    @State private var chosenCurrency: Currency?
 
-    private var currency: Currency { Currency(code: currencyCode) }
-
-    private var currencyBinding: Binding<Currency> {
-        Binding(
-            get: { Currency(code: currencyCode) },
-            set: { currencyCode = $0.code }
-        )
+    /// The chips for the side being looked at.
+    private var options: [OwedCurrency] {
+        people.owedCurrencies(side, preferred: Currency(code: homeCurrencyCode))
     }
 
-    private var summary: OwedSummary {
-        people.owedSummary(side, in: currency)
-    }
-
-    private var sortedRows: [OwedSummary.Row] {
-        switch sort {
-        case .largest:
-            summary.rows.sorted { $0.minorUnits > $1.minorUnits }
-        case .recent:
-            summary.rows.sorted { $0.person.lastActivity > $1.person.lastActivity }
-        case .name:
-            summary.rows.sorted {
-                $0.person.name.localizedStandardCompare($1.person.name) == .orderedAscending
-            }
-        }
+    /// The chosen currency if this side still has it, otherwise the first chip.
+    private var currency: Currency? {
+        OwedCurrency.resolve(selected: chosenCurrency, in: options)
     }
 
     private let columns = [
@@ -62,24 +47,32 @@ struct OwedView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: Spacing.m) {
-                Picker("Side", selection: $side) {
-                    Text("Owed to you").tag(OwedSide.owedToYou)
-                    Text("You owe").tag(OwedSide.youOwe)
+            VStack(alignment: .leading, spacing: Spacing.m) {
+                SegmentedTabs(selection: $side, options: [.owedToYou, .youOwe]) { side -> LocalizedStringKey in
+                    switch side {
+                    case .owedToYou: "Owed to you"
+                    case .youOwe: "You owe"
+                    }
                 }
-                .pickerStyle(.segmented)
 
-                totalCard
-                listHeader
+                if let currency {
+                    let summary = people.owedSummary(side, in: currency)
 
-                if sortedRows.isEmpty {
-                    emptyState
-                } else {
+                    totalHeader(currency: currency, summary: summary)
+
+                    CurrencyFilterChips(options: options, selected: currency) {
+                        chosenCurrency = $0
+                    }
+
+                    listHeader
+
                     LazyVGrid(columns: columns, spacing: Spacing.m) {
-                        ForEach(sortedRows) { row in
-                            card(for: row)
+                        ForEach(sortedRows(of: summary)) { row in
+                            card(for: row, in: currency)
                         }
                     }
+                } else {
+                    emptyState
                 }
             }
             .padding(.horizontal, Spacing.m)
@@ -93,43 +86,37 @@ struct OwedView: View {
 
     // MARK: Pieces
 
-    private var totalCard: some View {
-        VStack(spacing: Spacing.s) {
-            Text(currency.formatted(minorUnits: summary.total))
-                .font(.appBalance)
-                .foregroundStyle(.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
+    private func totalHeader(currency: Currency, summary: OwedSummary) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            caption(for: currency)
+                .font(.appBody)
+                .foregroundStyle(.textSecondary)
 
-            caption
+            BigAmount(text: currency.formatted(minorUnits: summary.total), currency: currency)
 
-            CurrencyChip(currency: currencyBinding, isProminent: true)
-                .padding(.top, Spacing.xs)
+            Text("^[\(summary.rows.count) person](inflect: true)")
+                .font(.appBody)
+                .foregroundStyle(.textSecondary)
         }
-        .frame(maxWidth: .infinity)
-        .padding(Spacing.m)
-        .background(.surface, in: RoundedRectangle(cornerRadius: Radius.l))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, Spacing.s)
     }
 
     @ViewBuilder
-    private var caption: some View {
+    private func caption(for currency: Currency) -> some View {
         switch side {
         case .owedToYou:
             Text("Total owed to you in \(currency.code)")
-                .font(.appCaption)
-                .foregroundStyle(.textSecondary)
         case .youOwe:
             Text("Total you owe in \(currency.code)")
-                .font(.appCaption)
-                .foregroundStyle(.textSecondary)
         }
     }
 
     private var listHeader: some View {
         HStack {
-            Text("^[\(sortedRows.count) balance](inflect: true)")
-                .font(.appBody)
-                .foregroundStyle(.textSecondary)
+            Text("People")
+                .font(.appTitle)
+                .foregroundStyle(.textPrimary)
 
             Spacer()
 
@@ -162,12 +149,25 @@ struct OwedView: View {
                 systemImage: "checkmark.circle"
             )
         } description: {
-            Text("No open balances in \(currency.code).")
+            Text("No open balances.")
         }
         .padding(.top, Spacing.xl)
     }
 
-    private func card(for row: OwedSummary.Row) -> some View {
+    private func sortedRows(of summary: OwedSummary) -> [OwedSummary.Row] {
+        switch sort {
+        case .largest:
+            summary.rows.sorted { $0.minorUnits > $1.minorUnits }
+        case .recent:
+            summary.rows.sorted { $0.person.lastActivity > $1.person.lastActivity }
+        case .name:
+            summary.rows.sorted {
+                $0.person.name.localizedStandardCompare($1.person.name) == .orderedAscending
+            }
+        }
+    }
+
+    private func card(for row: OwedSummary.Row, in currency: Currency) -> some View {
         NavigationLink(value: row.person) {
             VStack(spacing: Spacing.s) {
                 PersonAvatar(person: row.person, size: 64)
@@ -177,7 +177,7 @@ struct OwedView: View {
                     .foregroundStyle(.textPrimary)
                     .lineLimit(1)
 
-                amountText(for: row)
+                amountText(for: row, in: currency)
                     .font(.appBody)
                     .foregroundStyle(.textSecondary)
                     .lineLimit(1)
@@ -196,7 +196,7 @@ struct OwedView: View {
     }
 
     @ViewBuilder
-    private func amountText(for row: OwedSummary.Row) -> some View {
+    private func amountText(for row: OwedSummary.Row, in currency: Currency) -> some View {
         let amount = currency.formatted(minorUnits: row.minorUnits)
         switch side {
         case .owedToYou: Text("Owes you \(amount)")

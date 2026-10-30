@@ -41,7 +41,7 @@ enum PreviewData {
                ali.note = "Brings dollars on Fridays. Prefers to be paid back in euros."
 
                let humo = PaymentCard(number: "9860123456789012", holderName: "ALI KARIMOV")
-               let sber = PaymentCard(number: "2202123456789012", holderName: "ALI KARIMOV", bank: .sber)
+               let sber = PaymentCard(number: "2202123456789012", holderName: "ALI KARIMOV", bankName: "Sber")
                context.insert(humo)
                context.insert(sber)
                humo.person = ali

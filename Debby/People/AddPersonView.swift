@@ -153,13 +153,13 @@ struct AddPersonView: View {
     private var cardsSection: some View {
         VStack(spacing: Spacing.s) {
             ForEach(savedCards) { card in
-                CardRow(number: card.number, holderName: card.holderName, bank: card.bank) {
-                    removedCardIDs.insert(card.persistentModelID)
-                }
+                CardRow(number: card.number, holderName: card.holderName, bankName: card.bankName) {
+                                    removedCardIDs.insert(card.persistentModelID)
+                                }
             }
 
             ForEach(cardDrafts) { draft in
-                CardRow(number: draft.number, holderName: draft.holderName, bank: draft.bank) {
+                CardRow(number: draft.number, holderName: draft.holderName, bankName: draft.bankName) {
                     cardDrafts.removeAll { $0.id == draft.id }
                 }
             }
@@ -231,7 +231,7 @@ struct AddPersonView: View {
         }
 
         for draft in cardDrafts {
-            let card = PaymentCard(number: draft.number, holderName: draft.holderName, bank: draft.bank)
+            let card = PaymentCard(number: draft.number, holderName: draft.holderName, bankName: draft.bankName)
             context.insert(card)
             card.person = person
         }

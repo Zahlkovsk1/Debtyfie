@@ -8,31 +8,20 @@
 import Foundation
 import SwiftData
 
-nonisolated enum Bank: String, Codable, CaseIterable, Sendable {
-    case sber, tbank
-
-    var displayName: String {
-        switch self {
-        case .sber: "Sber"
-        case .tbank: "T-Bank"
-        }
-    }
-}
-
 @Model
 final class PaymentCard {
     var id: UUID
     var number: String          // digits only, no spaces
     var holderName: String
-    var bank: Bank?
+    var bankName: String = ""   // free text, empty when not given
     var createdAt: Date
     var person: Person?
 
-    init(number: String, holderName: String = "", bank: Bank? = nil) {
+    init(number: String, holderName: String = "", bankName: String = "") {
         self.id = UUID()
         self.number = number.filter { $0.isASCII && $0.isNumber }
         self.holderName = holderName
-        self.bank = bank
+        self.bankName = bankName.trimmingCharacters(in: .whitespacesAndNewlines)
         self.createdAt = .now
     }
 }

@@ -15,6 +15,7 @@ struct CardBadge: View {
         Text(text)
             .font(.caption2.weight(.bold))
             .foregroundStyle(.textPrimary)
+            .lineLimit(1)
             .padding(.horizontal, Spacing.s)
             .padding(.vertical, 3)
             .background(.appBackground, in: Capsule())
@@ -24,7 +25,7 @@ struct CardBadge: View {
 struct CardRow: View {
     let number: String            // digits only
     var holderName: String = ""
-    var bank: Bank?
+    var bankName: String = ""
     var onDelete: (() -> Void)?
 
     @State private var justCopied = false
@@ -34,10 +35,10 @@ struct CardRow: View {
     var body: some View {
         HStack(spacing: Spacing.m) {
             VStack(alignment: .leading, spacing: Spacing.s) {
-                if network != nil || bank != nil {
+                if network != nil || !bankName.isEmpty {
                     HStack(spacing: Spacing.s) {
                         if let network { CardBadge(text: network.displayName) }
-                        if let bank { CardBadge(text: bank.displayName) }
+                        if !bankName.isEmpty { CardBadge(text: bankName) }
                     }
                 }
                 Text(CardNetwork.grouped(number))
@@ -86,8 +87,8 @@ struct CardRow: View {
 #Preview {
     VStack(spacing: Spacing.m) {
         CardRow(number: "8600123456789012", holderName: "ALI KARIMOV")
-        CardRow(number: "2200123456789012", holderName: "ALI KARIMOV", bank: .sber) {}
-        CardRow(number: "4111111111111111", bank: .tbank)
+        CardRow(number: "2200123456789012", holderName: "ALI KARIMOV", bankName: "Sber") {}
+        CardRow(number: "4111111111111111", bankName: "Chase")
         CardRow(number: "1234567890123456")
     }
     .padding(Spacing.m)
