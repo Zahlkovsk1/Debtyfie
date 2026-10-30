@@ -17,6 +17,12 @@ struct RootView: View {
             Tab("Statistics", systemImage: "chart.bar") {
                 StatsView()
             }
+            
+            Tab("Owed", systemImage: "scalemass") {
+                       NavigationStack {
+                           OwedView()
+                       }
+                   }
         }
         .tint(.textPrimary)
     }

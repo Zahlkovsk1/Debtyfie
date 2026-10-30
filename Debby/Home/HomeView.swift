@@ -4,9 +4,12 @@
 //
 //  Created by Shox on 19/10/26.
 //
-
 import SwiftUI
 import SwiftData
+
+enum HomeRoute: Hashable {
+    case allPeople
+}
 
 struct HomeView: View {
     @Query private var people: [Person]
@@ -29,17 +32,20 @@ struct HomeView: View {
         people.sorted { $0.lastActivity > $1.lastActivity }
     }
 
-    private var total: Int {
-        people.totalBalances()[selectedCurrency] ?? 0
+    private var snapshot: StatsSnapshot {
+        people.statsSnapshot(in: selectedCurrency)
     }
 
     var body: some View {
+        let _ = Self._printChanges()
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
                     VStack(alignment: .leading, spacing: Spacing.m) {
-                        BalanceHeader(minorUnits: total, currency: selectedCurrency)
-                        chips
+                        HomeHeader(snapshot: snapshot, currency: currencyBinding)
+                        if !people.isEmpty {
+                            allPeopleChip
+                        }
                     }
 
                     if people.isEmpty {
@@ -58,40 +64,15 @@ struct HomeView: View {
             .background(.appBackground)
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: Person.self) { PersonDetailView(person: $0) }
+            .navigationDestination(for: HomeRoute.self) { _ in AllPeopleView() }
             .overlay(alignment: .bottomTrailing) { addButton }
             .sheet(isPresented: $isAddingEntry) { AddEntryView() }
             .sheet(isPresented: $isAddingPerson) { AddPersonView() }
         }
     }
 
-    private var chips: some View {
-        HStack(spacing: Spacing.s) {
-            CurrencyChip(currency: currencyBinding, isProminent: true)
-            if !people.isEmpty {
-                allPeopleChip
-                owedChip
-            }
-        }
-    }
-
-    private var owedChip: some View {
-        NavigationLink {
-            OwedView()
-        } label: {
-            HStack(spacing: Spacing.s) {
-                Image(systemName: "scalemass")
-                Text("Owed")
-                    .font(.appHeadline)
-            }
-            .filledChip()
-        }
-        .buttonStyle(.plain)
-    }
-
     private var allPeopleChip: some View {
-        NavigationLink {
-            AllPeopleView()
-        } label: {
+        NavigationLink(value: HomeRoute.allPeople) {
             HStack(spacing: Spacing.s) {
                 Image(systemName: "list.bullet")
                 Text("All people")
@@ -130,9 +111,7 @@ struct HomeView: View {
                     .foregroundStyle(.textPrimary)
                 Spacer()
                 if people.count > gridLimit {
-                    NavigationLink {
-                        AllPeopleView()
-                    } label: {
+                    NavigationLink(value: HomeRoute.allPeople) {
                         HStack(spacing: Spacing.xs) {
                             Text("See all")
                             Image(systemName: "chevron.right")
@@ -154,7 +133,7 @@ struct HomeView: View {
             }
         }
     }
-    
+
     private var history: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             Text("History")
@@ -186,8 +165,8 @@ struct HomeView: View {
     }
 
     private var addButton: some View {
-          FloatingAddButton(label: "Add entry") { isAddingEntry = true }
-      }
+        FloatingAddButton(label: "Add entry") { isAddingEntry = true }
+    }
 }
 
 #Preview {
@@ -199,4 +178,3 @@ struct HomeView: View {
     HomeView()
         .modelContainer(for: [Person.self, Entry.self, PaymentCard.self], inMemory: true)
 }
-

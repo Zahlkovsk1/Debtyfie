@@ -40,6 +40,7 @@ struct PersonDetailView: View {
     }
 
     var body: some View {
+        let _ = Self._printChanges()
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.l) {
                 header
@@ -59,6 +60,8 @@ struct PersonDetailView: View {
             .padding(.bottom, 96)
         }
         .background(.appBackground)
+        .onAppear { print("➡️ PersonDetail appeared") }
+                .onDisappear { print("⬅️ PersonDetail disappeared") }
         .overlay(alignment: .bottomTrailing) {
             FloatingAddButton(label: "Add entry") { isAddingEntry = true }
         }

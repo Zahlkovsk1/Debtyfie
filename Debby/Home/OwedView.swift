@@ -88,7 +88,7 @@ struct OwedView: View {
         }
         .background(.appBackground)
         .navigationTitle("Owed")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(for: Person.self) { PersonDetailView(person: $0) }
     }
 
     // MARK: Pieces

@@ -4,7 +4,6 @@
 //
 //  Created by Shox on 19/10/26.
 //
-
 import SwiftUI
 import SwiftData
 
@@ -14,11 +13,9 @@ struct HistoryRow: View {
 
     var body: some View {
         HStack(spacing: Spacing.m) {
-            Image(systemName: entry.direction == .gave ? "arrow.up.right" : "arrow.down.left")
-                .font(.appHeadline)
-                .foregroundStyle(.textPrimary)
-                .frame(width: 44, height: 44)
-                .background(.surface, in: Circle())
+            if showsPerson {
+                avatar
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 title
@@ -36,7 +33,7 @@ struct HistoryRow: View {
             Spacer(minLength: Spacing.s)
 
             VStack(alignment: .trailing, spacing: 2) {
-                Text(entry.currency.formatted(entry.amount))
+                Text(amountText)
                     .font(.appAmount)
                     .foregroundStyle(.textPrimary)
                 if let conversion = entry.conversion {
@@ -50,19 +47,28 @@ struct HistoryRow: View {
         .contentShape(Rectangle())
     }
 
-    /// With the person's avatar and name on the home screen, or just the
-    /// direction on the person's own screen, where the face would repeat.
+    // MARK: Pieces
+
+    /// The person's own avatar, shown on the home screen only.
+    @ViewBuilder
+    private var avatar: some View {
+        if let person = entry.person {
+            PersonAvatar(person: person, size: 44)
+        } else {
+            Circle()
+                .fill(Color.surface)
+                .frame(width: 44, height: 44)
+        }
+    }
+
+    /// The person's name on the home screen, or just the direction on the
+    /// person's own screen, where their face would repeat on every row.
     @ViewBuilder
     private var title: some View {
         if showsPerson {
-            HStack(spacing: Spacing.s) {
-                if let person = entry.person {
-                    PersonAvatar(person: person, size: 28)
-                }
-                Text(entry.person?.name ?? "–")
-                    .font(.appHeadline)
-                    .foregroundStyle(.textPrimary)
-            }
+            Text(entry.person?.name ?? "–")
+                .font(.appHeadline)
+                .foregroundStyle(.textPrimary)
         } else {
             Text(directionText)
                 .font(.appHeadline)
@@ -70,13 +76,21 @@ struct HistoryRow: View {
         }
     }
 
+    // MARK: Text
+
+    /// "+200,00 $" when you received, "−500,00 $" when you gave.
+    private var amountText: String {
+        let amount = entry.currency.formatted(entry.amount)
+        return entry.direction == .gave ? "−" + amount : "+" + amount
+    }
+
     private var directionText: String {
         entry.direction == .gave ? String(localized: "You gave") : String(localized: "You received")
     }
 
     private var timeText: String {
-          entry.date.formatted(date: .omitted, time: .shortened)
-      }
+        entry.date.formatted(date: .omitted, time: .shortened)
+    }
 
     private var subtitle: String {
         showsPerson ? "\(directionText) · \(timeText)" : timeText
